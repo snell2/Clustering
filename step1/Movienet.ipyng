@@ -1,0 +1,25 @@
+import pandas as pd
+from pyspark.sql.functions import *
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+import numpy as np
+
+path="s3://finalgeodata/"
+
+d = sc.textFile(path+"devicestatus.txt").map(lambda x: x.replace('|',',').replace('/',',').split(',')).toDF()
+data=d.toPandas()
+
+df=d.select("_13","_14","_1","_2","_3").withColumnRenamed("_13", "latitude").withColumnRenamed("_14", "longitude").withColumnRenamed("_1", "date").withColumnRenamed("_2", "model").withColumnRenamed("_3", "deviceID")
+
+#df.show()
+
+df =df.filter((df.latitude!=0) & (df.longitude!=0))
+
+#df.count()
+
+df=df.withColumn("manufacturer",split(df.model," ").getItem(0)).withColumn("model",split(df.model," ").getItem(1))
+
+df.show()
+
+df.write.csv("s3a://finalgeodata/outputstep1")
+
